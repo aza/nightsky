@@ -77,9 +77,9 @@ function init(){
 	document.body.appendChild( container )
 
 	var camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, .1, 10000 );
-	camera.position.z = 10;
+	camera.position.z = 0;
 	var scene = new THREE.Scene()
-	scene.fog = new THREE.FogExp2( 0x000000, .0005 )
+	scene.fog = new THREE.FogExp2( 0x000000, .000005 )
 
 	var cloud = new CreatePointCloud( "disc.png" )
 	cloud.addTo( scene )
@@ -95,7 +95,7 @@ function init(){
 	scene.add( camera )
 
 	// API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
-	var c = new THREE.Mesh(new THREE.CylinderGeometry(0, 10, 1000, 50, 50, false), new THREE.MeshNormalMaterial());
+	var c = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
 	scene.add(c)
 
 	c.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -500, 0 ) );
@@ -127,7 +127,6 @@ function render(){
 	setObjToRiftOrientation( globals.camera )
 	c.rotation.x = Math.PI/2 + camera.rotation.x
 	c.rotation.z = -camera.rotation.y
-	//setObjToRiftOrientation( globals.cylinder )
 	
 
 }
