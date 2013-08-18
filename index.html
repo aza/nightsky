@@ -101,7 +101,7 @@
 
 		geometry = new THREE.Geometry();
 
-		sprite = THREE.ImageUtils.loadTexture( "ball.png" );
+		sprite = THREE.ImageUtils.loadTexture( "disc.png" );
 
 		for ( i = 0; i < 10000; i ++ ) {
 
@@ -120,7 +120,7 @@
 			//sizeAttenuation: false,
 			map: sprite,
 			transparent: true,
-			blending: THREE.AdditiveBlending,
+			//blending: THREE.AdditiveBlending,
 			//blending: THREE.SubtractiveBlending,
 			vertexColors: true
 		});
