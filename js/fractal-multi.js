@@ -53,10 +53,13 @@ if( !window.nightsky ) window.nightsky = {}
 	// Locals
 
 	var windowHalfX = window.innerWidth / 2,
-  		windowHalfY = window.innerHeight / 2,
-			C = nightsky.constants
+  		windowHalfY = window.innerHeight / 2
 
-
+	//////////////////////////////////////////////////////////////////////////////
+	//
+	// Utility Functions
+	//
+	//
 	function onKeyDown(){
 		console.log('key' + event.keyCode);
 
@@ -117,11 +120,88 @@ if( !window.nightsky ) window.nightsky = {}
 		obj.rotation.z = r.z
 	}	
 
-	//////////////////////////////////////////////////////////////////////////////
-	//
-	// Sexy particles
-	//
-	//
+
+	vr.load(function(error){
+		init();
+		animate();
+	})
+
+	function init() {
+		var container = document.createElement( 'div' ),
+				C = nightsky.constants,
+				particles
+		
+		document.body.appendChild( container )
+
+		nightsky.renderer = new THREE.WebGLRenderer( { clearColor: 0x000000, clearAlpha: 1, antialiawws: true } );
+		nightsky.renderer.setSize( window.innerWidth, window.innerHeight );
+		nightsky.effect = new THREE.OculusRiftEffect( nightsky.renderer );
+		container.appendChild( nightsky.renderer.domElement )
+
+		nightsky.camera = new THREE.PerspectiveCamera( 180, window.innerWidth / window.innerHeight, 0, 3 * C.SCALE_FACTOR );
+		nightsky.camera.position.z = C.SCALE_FACTOR/2;
+
+		nightsky.scene = new THREE.Scene();
+		nightsky.scene.fog = new THREE.FogExp2( 0x000000, 0.0011);
+		nightsky.scene.add( nightsky.camera );
+
+		window.addEventListener( 'resize', onWindowResize, false );
+		window.addEventListener( 'keydown', onKeyDown, false );
+
+		nightsky.initWorld();
+
+	}
+
+	function animate() {
+		vr.requestAnimationFrame( animate );
+		render();
+	}
+
+	function render() {
+		var rotation = new THREE.Quaternion(),
+				angles = new THREE.Euler()
+
+		// Use either mouse or oculus controls
+		if (nightsky.isOculusEnabled === true) {
+			vr.pollState(nightsky.vrstate)
+			nightsky.effect.render( nightsky.scene, nightsky.camera )
+	    nightsky.camera.rotation = getRiftOrientation()
+			setObjToRiftOrientation( nightsky.camera )
+		} 
+		else {
+			nightsky.renderer.render( nightsky.scene, nightsky.camera )
+			nightsky.camera.rotation.y = ( -nightsky.mouse.x - nightsky.camera.position.x ) / 360
+	   	nightsky.camera.rotation.x = ( -nightsky.mouse.y ) / 360
+		}
+		nightsky.updateWorld()
+
+	}
+
+	///////////////////////////////////////////////
+	// Manage world
+	///////////////////////////////////////////////
+	var	hueValues = [],
+			C = nightsky.constants
+
+	// Insert coolness into the world
+	nightsky.initWorld = function() {
+		nightsky.initDataPoints()
+		nightsky.createLayers()
+		setInterval(updateOrbit, 7000)
+	}
+
+	// Update coolness
+	nightsky.updateWorld = function() {
+		nightsky.updateLayers()
+
+		nightsky.camera.position.z = 0
+		nightsky.camera.position.y += nightsky.camera.rotation.x * nightsky.layerSpeed 
+		nightsky.camera.position.x -= nightsky.camera.rotation.y * nightsky.layerSpeed
+}
+
+	///////////////////////////////////////////////
+	// Hopalong Orbit Generator
+	///////////////////////////////////////////////
 
 	// Initialize data points
 	nightsky.initDataPoints = function(){
@@ -141,8 +221,6 @@ if( !window.nightsky ) window.nightsky = {}
 		}
 	}
 				
-	nightsky.initDataPoints()
-
 	function particleMaterial(){
 		return new THREE.ParticleBasicMaterial({
 			size: (1),
@@ -154,8 +232,10 @@ if( !window.nightsky ) window.nightsky = {}
 	}
 
 	nightsky.createLayers = function() {
+		
 		generateOrbit();
 		eachSubset(function(subset, s){ hueValues[s] = Math.random() })
+
 		// Create container for particle systems
 		nightsky.layerContainer = new THREE.Object3D()
 		nightsky.scene.add( nightsky.layerContainer )
@@ -217,75 +297,6 @@ if( !window.nightsky ) window.nightsky = {}
 		})
 	}
 
-	var hueValues = [];
-
-	vr.load(function(error){
-		init();
-		animate();
-	})
-
-	function init() {
-		var container = document.createElement( 'div' ),
-				C = nightsky.constants,
-				particles
-		
-		document.body.appendChild( container )
-
-		nightsky.renderer = new THREE.WebGLRenderer( { clearColor: 0x000000, clearAlpha: 1, antialiawws: true } );
-		nightsky.renderer.setSize( window.innerWidth, window.innerHeight );
-		nightsky.effect = new THREE.OculusRiftEffect( nightsky.renderer );
-		container.appendChild( nightsky.renderer.domElement )
-
-		nightsky.camera = new THREE.PerspectiveCamera( 180, window.innerWidth / window.innerHeight, 0, 3 * C.SCALE_FACTOR );
-		nightsky.camera.position.z = C.SCALE_FACTOR/2;
-
-		nightsky.scene = new THREE.Scene();
-		nightsky.scene.fog = new THREE.FogExp2( 0x000000, 0.0011);
-		nightsky.scene.add( nightsky.camera );
-
-		window.addEventListener( 'resize', onWindowResize, false );
-		window.addEventListener( 'keydown', onKeyDown, false );
-
-		// Insert coolness into the world
-		nightsky.createLayers()
-		setInterval(updateOrbit, 7000)
-
-	}
-
-	function animate() {
-		vr.requestAnimationFrame( animate );
-		render();
-	}
-
-	function render() {
-		var rotation = new THREE.Quaternion(),
-				angles = new THREE.Euler()
-
-			// Use either mouse or oculus controls
-			if (nightsky.isOculusEnabled === true) {
-				vr.pollState(nightsky.vrstate)
-				nightsky.effect.render( nightsky.scene, nightsky.camera )
-		    nightsky.camera.rotation = getRiftOrientation()
-				setObjToRiftOrientation( nightsky.camera )
-			} 
-			else {
-				nightsky.renderer.render( nightsky.scene, nightsky.camera )
-				nightsky.camera.rotation.y = ( -nightsky.mouse.x - nightsky.camera.position.x ) / 360
-		   	nightsky.camera.rotation.x = ( -nightsky.mouse.y ) / 360
-			}
-
-		// Update coolness
-		nightsky.updateLayers()
-
-		nightsky.camera.position.z = 0
-		nightsky.camera.position.y += nightsky.camera.rotation.x * nightsky.layerSpeed 
-		nightsky.camera.position.x -= nightsky.camera.rotation.y * nightsky.layerSpeed
-
-	}
-
-	///////////////////////////////////////////////
-	// Hopalong Orbit Generator
-	///////////////////////////////////////////////
 
 	function eachSubset(iterator){
 		var s = 0
@@ -307,8 +318,6 @@ if( !window.nightsky ) window.nightsky = {}
 	}
 
 	function generateOrbit(){
-		var C = nightsky.constants
-
 		prepareOrbit();
 		
 		var subsets = nightsky.orbit.subsets,		
@@ -368,7 +377,6 @@ if( !window.nightsky ) window.nightsky = {}
 	}
 
 	function shuffleParams() {
-		var C = nightsky.constants
 		var modulate = function(){
 			//return Math.sin( Date.now()*.000005 )
 			return Math.random()
