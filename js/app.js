@@ -216,22 +216,12 @@ playersRef.on('value', function(snap){
 		if( !SKY.team.getByName(playerName) ){
 			// Create a tracking sphere
 			SKY.team.add( playerName )
-			// var lookSpot = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
-			// SKY.scene.add( lookSpot )
-			// lookSpot.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -1000, 0 ) );
-			// lookSpot.geometry.verticesNeedUpdate = true;
-
-			//PLAYERS[player] = newPlayer
 		}
 		// Move the tracking sphere
 		if( player != SKY.yourName ){
-			// SKY.players[player].rotation.x = Math.PI/2 + val[player].x//camera.rotation.x
-			// SKY.players[player].rotation.z = -val[player].y//camera.rotation.y
-			SKY.team.getByName(playerName).rotation.x = val[playerName].x//camera.rotation.x
-			SKY.team.getByName(playerName).rotation.z = val[playerName].y//camera.rotation.y			
+			SKY.team.getByName(playerName).rotation.x = val[playerName].x
+			SKY.team.getByName(playerName).rotation.z = val[playerName].y
 		}
-		
-		//console.log( val[players[i]] )
 	}
 
 })
