@@ -4,10 +4,56 @@ var globals = {
 	vrstate: new vr.State()
 }
 
+USERS = {}
+
 vr.load()
 
 init()
 animate()
+
+
+var userName = ((1<<24)*Math.random()|0).toString(16)
+var onlineRef = new Firebase('https://rift.firebaseio.com/users/'+userName)
+var connectedRef = new Firebase('https://rift.firebaseio.com/.info/connected');
+
+connectedRef.on('value', function(snap){
+	if( snap.val() === true ){
+		onlineRef.onDisconnect(function(){}).set(null)
+
+		window.updateNetworkStash = function(obj){
+			onlineRef.set(obj)
+		}
+
+		onlineRef.set(true)
+	}
+})
+
+var usersRef = new Firebase('https://rift.firebaseio.com/users')
+usersRef.on('value', function(snap){
+	var val = snap.val()
+	var users = Object.keys(val)
+	for( var i=0; i<users.length; i++){
+		var user = users[i]
+		//if( user == userName ) continue
+		if( !USERS[user] ){
+			// Create a tracking sphere
+			var lookSpot = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
+			globals.scene.add( lookSpot )
+			lookSpot.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -1000, 0 ) );
+			lookSpot.geometry.verticesNeedUpdate = true;
+
+			USERS[user] = lookSpot
+		}
+
+		// Move the tracking sphere
+		if( user != userName ){
+			USERS[user].rotation.x = Math.PI/2 + val[user].x//camera.rotation.x
+			USERS[user].rotation.z = -val[user].y//camera.rotation.y
+		}
+		
+		//console.log( val[users[i]] )
+	}
+})
 
 
 function getRiftOrientation(){
@@ -70,7 +116,6 @@ function CreatePointCloud(spriteName){
 
 }
 
-
 function init(){
 	// Make the container DIV
 	var container = document.createElement( 'div' )
@@ -94,14 +139,6 @@ function init(){
 	var effect = new THREE.OculusRiftEffect( renderer )
 	scene.add( camera )
 
-	var lookSpot = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
-	scene.add(lookSpot)
-
-	lookSpot.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -1000, 0 ) );
-	lookSpot.geometry.verticesNeedUpdate = true;
-
-	globals.lookSpot = lookSpot
-
 	camera.lookAt( scene.position )
 
 	globals.effect = effect
@@ -114,17 +151,21 @@ function init(){
 function render(){
 	var time = Date.now() *.0005
 	var camera = globals.camera,
-		  lookSpot = globals.lookSpot
+		  lookSpot = USERS[userName]
 
-
-	//globals.effect.render( globals.scene, globals.camera )
-	globals.renderer.render( globals.scene, camera )
+	globals.effect.render( globals.scene, globals.camera )
+	//globals.renderer.render( globals.scene, camera )
 	vr.pollState(globals.vrstate)
 
 	setObjToRiftOrientation( globals.camera )
-	lookSpot.rotation.x = Math.PI/2 + camera.rotation.x
-	lookSpot.rotation.z = -camera.rotation.y
-	
+	if( lookSpot ){
+		lookSpot.rotation.x = Math.PI/2 + camera.rotation.x
+		lookSpot.rotation.z = -camera.rotation.y
+	}
+
+	if( window.updateNetworkStash ){
+		window.updateNetworkStash( {x: camera.rotation.x, y: camera.rotation.y, z: camera.rotation.z} )
+	}
 
 }
 
