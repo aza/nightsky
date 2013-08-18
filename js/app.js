@@ -54,7 +54,7 @@ function CreatePointCloud(spriteName){
 		size: 35,
 		map: sprite,
 		transparent: true,
-		//blending: THREE.AdditiveBlending,
+		blending: THREE.AdditiveBlending,
 		vertexColors: false
 	});
 
@@ -94,17 +94,13 @@ function init(){
 	var effect = new THREE.OculusRiftEffect( renderer )
 	scene.add( camera )
 
-	// API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
-	var c = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
-	scene.add(c)
+	var lookSpot = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
+	scene.add(lookSpot)
 
-	c.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -500, 0 ) );
-	c.geometry.verticesNeedUpdate = true;
+	lookSpot.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -1000, 0 ) );
+	lookSpot.geometry.verticesNeedUpdate = true;
 
-	window.c = c
-	
-	globals.cylinder = c
-	window.camera = camera
+	globals.lookSpot = lookSpot
 
 	camera.lookAt( scene.position )
 
@@ -117,16 +113,17 @@ function init(){
 
 function render(){
 	var time = Date.now() *.0005
-	var camera = globals.camera
+	var camera = globals.camera,
+		  lookSpot = globals.lookSpot
+
 
 	//globals.effect.render( globals.scene, globals.camera )
 	globals.renderer.render( globals.scene, camera )
 	vr.pollState(globals.vrstate)
 
-
 	setObjToRiftOrientation( globals.camera )
-	c.rotation.x = Math.PI/2 + camera.rotation.x
-	c.rotation.z = -camera.rotation.y
+	lookSpot.rotation.x = Math.PI/2 + camera.rotation.x
+	lookSpot.rotation.z = -camera.rotation.y
 	
 
 }
