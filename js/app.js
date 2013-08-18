@@ -10,6 +10,35 @@ init()
 animate()
 
 
+function getRiftOrientation(){
+	vr.pollState( globals.vrstate )
+
+	var rotation = new THREE.Quaternion();
+	var angles = new THREE.Vector3();
+	if (globals.vrstate) {
+		rotation.set(
+			globals.vrstate.hmd.rotation[0],
+			globals.vrstate.hmd.rotation[1],
+			globals.vrstate.hmd.rotation[2],
+			globals.vrstate.hmd.rotation[3]
+		)
+		
+		angles.setEulerFromQuaternion(rotation, 'XYZ');
+			//angles.z = 0;
+		rotation.setFromEuler(angles, 'XYZ');
+	}
+
+	return rotation
+}
+
+function setObjToRiftOrientation(obj){
+	var r = getRiftOrientation()
+	obj.rotation.x = r.x
+	obj.rotation.y = r.y
+	obj.rotation.z = r.z
+}
+
+
 function CreatePointCloud(spriteName){
 	var sprite = THREE.ImageUtils.loadTexture( spriteName )
 	this.geometry = new THREE.Geometry()
@@ -47,8 +76,8 @@ function init(){
 	var container = document.createElement( 'div' )
 	document.body.appendChild( container )
 
-	var camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 2, 10000 );
-	camera.position.z = 2000;
+	var camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, .1, 10000 );
+	camera.position.z = 10;
 	var scene = new THREE.Scene()
 	scene.fog = new THREE.FogExp2( 0x000000, .0005 )
 
@@ -65,6 +94,17 @@ function init(){
 	var effect = new THREE.OculusRiftEffect( renderer )
 	scene.add( camera )
 
+	// API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
+	var c = new THREE.Mesh(new THREE.CylinderGeometry(0, 10, 1000, 50, 50, false), new THREE.MeshNormalMaterial());
+	scene.add(c)
+
+	c.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -500, 0 ) );
+	c.geometry.verticesNeedUpdate = true;
+
+	window.c = c
+	
+	globals.cylinder = c
+	window.camera = camera
 
 	camera.lookAt( scene.position )
 
@@ -79,14 +119,16 @@ function render(){
 	var time = Date.now() *.0005
 	var camera = globals.camera
 
-	globals.effect.render( globals.scene, globals.camera )
-	//globals.renderer.render( globals.scene, camera )
+	//globals.effect.render( globals.scene, globals.camera )
+	globals.renderer.render( globals.scene, camera )
 	vr.pollState(globals.vrstate)
 
-	camera.position.z = Math.sin( time ) * 1000
-	camera.position.x = Math.cos( time + Math.sin(time/2)) * 500
-	camera.position.y = Math.sin( time - Math.cos(time/2)) * 500
-	camera.lookAt( globals.scene.position )
+
+	setObjToRiftOrientation( globals.camera )
+	c.rotation.x = Math.PI/2 + camera.rotation.x
+	c.rotation.z = -camera.rotation.y
+	//setObjToRiftOrientation( globals.cylinder )
+	
 
 }
 
