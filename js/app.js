@@ -33,16 +33,19 @@ function onDocumentMouseMove( event ) {
 
 }
 
-USERS = {}
+PLAYERS = {}
 
 vr.load()
-
 init()
 animate()
 
-
-var userName = ((1<<24)*Math.random()|0).toString(16)
-var onlineRef = new Firebase('https://rift.firebaseio.com/users/'+userName)
+//////////////////////////////////////////////////////////////////////////////
+//
+// FIREBASE PHWOAR MULTIPLAYA!!!!
+//
+//
+var playerName = ((1<<24)*Math.random()|0).toString(16)
+var onlineRef = new Firebase('https://rift.firebaseio.com/players/'+playerName)
 var connectedRef = new Firebase('https://rift.firebaseio.com/.info/connected');
 
 connectedRef.on('value', function(snap){
@@ -57,37 +60,40 @@ connectedRef.on('value', function(snap){
 	}
 })
 
-var usersRef = new Firebase('https://rift.firebaseio.com/users')
-usersRef.on('value', function(snap){
+var playersRef = new Firebase('https://rift.firebaseio.com/players')
+playersRef.on('value', function(snap){
+	console.log(snap.val());
 	var val = snap.val()
-	var users = Object.keys(val)
-	for( var i=0; i<users.length; i++){
-		var user = users[i]
-		//if( user == userName ) continue
-		if( !USERS[user] ){
+	var players = Object.keys(val)
+	for( var i=0; i<players.length; i++){
+		var player = players[i]
+		//if( player == playerName ) continue
+		if( !PLAYERS[player] ){
 			// Create a tracking sphere
 			var lookSpot = new THREE.Mesh(new THREE.SphereGeometry(10), new THREE.MeshNormalMaterial());
 			globals.scene.add( lookSpot )
 			lookSpot.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -1000, 0 ) );
 			lookSpot.geometry.verticesNeedUpdate = true;
 
-			USERS[user] = lookSpot
+			PLAYERS[player] = lookSpot
 		}
 
 		// Move the tracking sphere
-		if( user != userName ){
-			USERS[user].rotation.x = Math.PI/2 + val[user].x//camera.rotation.x
-			USERS[user].rotation.z = -val[user].y//camera.rotation.y
+		if( player != playerName ){
+			PLAYERS[player].rotation.x = Math.PI/2 + val[player].x//camera.rotation.x
+			PLAYERS[player].rotation.z = -val[player].y//camera.rotation.y
 		}
 		
-		//console.log( val[users[i]] )
+		//console.log( val[players[i]] )
 	}
 
 	//HACKY DISTANCE TEST
-	if( users.length == 2 ){
-		var dX = Math.pow(USERS[users[0]].rotation.x - USERS[users[1]].rotation.x, 2)
-		var dY = Math.pow(USERS[users[0]].rotation.z - USERS[users[1]].rotation.z, 2)
-		var d = Math.pow( dX+dY, .5 )
+	if( players.length == 2 ){
+		var dX = Math.pow(PLAYERS[players[0]].rotation.x - PLAYERS[players[1]].rotation.x, 2)
+		var dY = Math.pow(PLAYERS[players[0]].rotation.z - PLAYERS[players[1]].rotation.z, 2)
+		var d = Math.pow( dX+dY, .5 )		
+		// var d = getDistanceBetweenPlayers(PLAYERS[players[0]], PLAYERS[players[1]])
+		console.log(d);
 		if( d < .2 ){
 			if( d < .1 ) d = .1
 				//console.log( d )
@@ -99,11 +105,21 @@ usersRef.on('value', function(snap){
 				globals.clouds[1].particles.position.z = -10000
 			}
 		}
-
 	}
 })
 
+function getDistanceBetweenPlayers( playerA, playerB ) {
+	console.log("player", playerA.position, playerB.position);
+	return playerA.position.distanceTo(playerB.position);
+}
 
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Oculus Utility Functions
+//
+//
 function getRiftOrientation(){
 	vr.pollState( globals.vrstate )
 
@@ -133,6 +149,11 @@ function setObjToRiftOrientation(obj){
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// Factories
+//
+//
 function CreatePointCloud(spriteName){
 	var sprite = THREE.ImageUtils.loadTexture( spriteName )
 	this.geometry = new THREE.Geometry()
@@ -179,7 +200,16 @@ function playerCylinder( scene ) {
 	return mesh;
 }
 
+function player ( scene ) {
 
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Init & Game Loop
+//
+//
 function init(){
 	// Make the container DIV
 	var container = document.createElement( 'div' )
@@ -225,7 +255,7 @@ function init(){
 function render(){
 	var time = Date.now() *.0005
 	var camera = globals.camera,
-		  lookSpot = USERS[userName]
+		  lookSpot = PLAYERS[playerName]
 
 	// Update camera from Oculus or from mouse if globals.OCULUS = false
 	if (globals.OCULUS === true) {
