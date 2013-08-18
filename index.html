@@ -1,0 +1,367 @@
+<html>
+<head>
+	<title>Dancing Pixel Mirror</title>
+	<script type="text/javascript" src="js/three.min.js"></script>
+	<script type="text/javascript" src="js/tinycolor.js"></script>
+	<script type="text/javascript" src="js/dancer.js"></script>
+	<script src="js/vr.js"></script>
+	<script src="js/bokeh.js"></script>
+	<script src="js/controls/OculusRiftControls.js"></script>
+	<script src="js/effects/OculusRiftEffect.js"></script>	
+	<style>
+	body{ margin:0; padding:0; background-color: black;}
+	</style>
+</head>
+<body>
+<audio src="/music/deep.mp3" id="theSong"></audio>
+<script>
+
+	var container;
+	var camera, scene, renderer, particles, geometry, material, i, h, color, sprite, size;
+	var mouseX = 0, mouseY = 0;
+	var positions = [];
+	var img
+	var loudness = 0
+	var vrstate = new vr.State();
+	var postprocessing = { enabled  : true };
+	var shaderSettings = {
+				rings: 3,
+				samples: 4
+			};
+	var material_depth;
+	var imageDataStorage = {}
+
+
+	var windowHalfX = window.innerWidth / 2;
+	var windowHalfY = window.innerHeight / 2;
+
+	var dancer = new Dancer();
+
+	var maxW = 208
+	var maxH = 208
+
+
+	vr.load()
+	init();
+	animate();
+	setTimeout(afterLoad)
+
+
+	function applyImage(imgSrc){
+		var theImg = new Image()
+		theImg.src = imgSrc;
+		theImg.onload = function(){
+			
+
+			if( !imageDataStorage[theImg.src] ){
+				var canvas = document.createElement('canvas')
+				canvas.width = theImg.width
+				canvas.height = theImg.height
+				canvas.getContext('2d').drawImage(theImg, 0, 0, theImg.width, theImg.height);
+				imageDataStorage[theImg.src] = canvas.getContext('2d').getImageData(0, 0, theImg.width, theImg.height).data
+			}
+			
+			imageData = imageDataStorage[theImg.src]
+			
+			window.getPixel = function(x,y){
+				var index = (y*theImg.width+x)*4
+				return {r: imageData[index], g:imageData[index+1], b:imageData[index+2]};
+			}
+
+			// vertex colors
+			var colors = [];
+			for( var i = 0; i < positions.length; i++ ) {
+			    colors[i] = new THREE.Color();
+			    
+			    var p = positions[i]
+			    var x = Math.round(p.x+maxH/2),
+			    	y = Math.round(p.y+maxH/2)
+		    	var c = window.getPixel(x,maxH-y)
+
+		    	colors[i].setRGB(c.r/255, c.g/255, c.b/255 )
+
+			}
+			particles.geometry.colors = colors;
+		}
+	}
+
+	function init() {
+
+		container = document.createElement( 'div' );
+		document.body.appendChild( container );
+
+		camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 2, 2000 );
+		camera.position.z = 2000;
+
+		material_depth = new THREE.MeshDepthMaterial();
+
+
+		scene = new THREE.Scene();
+		scene.fog = new THREE.FogExp2( 0x000000, 0.0005 );
+
+		geometry = new THREE.Geometry();
+
+		sprite = THREE.ImageUtils.loadTexture( "ball.png" );
+
+		for ( i = 0; i < 10000; i ++ ) {
+
+			var vertex = new THREE.Vector3();
+			vertex.x = maxW * (Math.random()-.5);
+			vertex.y = maxH * (Math.random()-.5);
+			vertex.z = 500 * (Math.random()-1)
+
+			positions.push( vertex )
+			geometry.vertices.push( vertex );
+
+		}
+
+		material = new THREE.ParticleBasicMaterial( {
+			size: 35,
+			//sizeAttenuation: false,
+			map: sprite,
+			transparent: true,
+			blending: THREE.AdditiveBlending,
+			//blending: THREE.SubtractiveBlending,
+			vertexColors: true
+		});
+		material.color.setHSL( 1.0, 0.3, 0.7 );
+
+		particles = new THREE.ParticleSystem( geometry, material );
+		particles.sortParticles = true;
+		scene.add( particles );
+
+		//
+
+		renderer = new THREE.WebGLRenderer( { clearAlpha: 1 } );
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		container.appendChild( renderer.domElement );
+
+		effect = new THREE.OculusRiftEffect( renderer );
+		scene.add( camera );
+
+		//
+		//initPostprocessing()
+
+		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+		window.addEventListener( 'resize', onWindowResize, false );
+
+		for( var i=1; i<=8; i++){
+			applyImage('horse/'+ i +'@2x.png');	
+		}
+	}
+
+
+	function afterLoad(){
+		var a = document.querySelector('#theSong')
+
+		dancer.load( a );
+		dancer.play()
+	}
+
+	function thingy(){
+		frequency = [ 0, 10 ]
+
+		var
+        max = 0,
+        fft = this.dancer.getSpectrum();
+
+	      // Sloppy array check
+	      if ( !frequency.length ) {
+	        return frequency < fft.length ?
+	          fft[ ~~frequency ] :
+	          null;
+	      }
+
+	      for ( var i = frequency[ 0 ], l = frequency[ 1 ]; i <= l; i++ ) {
+	        if ( fft[ i ] > max ) { max = fft[ i ]; }
+	      }
+      
+	    material.size = 3 + Math.min(50*max,30)//*max*30
+	    loudness = max
+    //console.log( max ) .04
+	}
+
+	function onWindowResize() {
+
+		windowHalfX = window.innerWidth / 2;
+		windowHalfY = window.innerHeight / 2;
+
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+	}
+
+	function onDocumentMouseMove( event ) {
+
+		mouseX = event.clientX - windowHalfX;
+		mouseY = event.clientY - windowHalfY;
+
+	}
+
+
+	//
+
+	function kick(){}
+
+	function animate() {
+
+		requestAnimationFrame( animate );
+
+		render();
+
+	}
+
+function initPostprocessing() {
+
+				postprocessing.scene = new THREE.Scene();
+
+				postprocessing.camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2,  window.innerHeight / 2, window.innerHeight / - 2, -10000, 10000 );
+				postprocessing.camera.position.z = 100;
+
+				postprocessing.scene.add( postprocessing.camera );
+
+				var pars = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat };
+				postprocessing.rtTextureDepth = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
+				postprocessing.rtTextureColor = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
+
+
+
+				var bokeh_shader = THREE.BokehShader;
+
+				postprocessing.bokeh_uniforms = THREE.UniformsUtils.clone( bokeh_shader.uniforms );
+
+				postprocessing.bokeh_uniforms[ "tColor" ].value = postprocessing.rtTextureColor;
+				postprocessing.bokeh_uniforms[ "tDepth" ].value = postprocessing.rtTextureDepth;
+
+				postprocessing.bokeh_uniforms[ "textureWidth" ].value = window.innerWidth;
+
+				postprocessing.bokeh_uniforms[ "textureHeight" ].value = window.innerHeight;
+
+				postprocessing.materialBokeh = new THREE.ShaderMaterial( {
+
+					uniforms: postprocessing.bokeh_uniforms,
+					vertexShader: bokeh_shader.vertexShader,
+					fragmentShader: bokeh_shader.fragmentShader,
+					defines: {
+						RINGS: shaderSettings.rings,
+						SAMPLES: shaderSettings.samples
+					}
+
+				} );
+
+				postprocessing.quad = new THREE.Mesh( new THREE.PlaneGeometry( window.innerWidth, window.innerHeight ), postprocessing.materialBokeh );
+				postprocessing.quad.position.z = - 500;
+				postprocessing.scene.add( postprocessing.quad );
+
+			}	
+
+	function render() {
+
+		var time = Date.now() * 0.00005;
+
+		
+
+    if( loudness > .06 ){
+    	//particles.scale.x = particles.scale.y = 1+max
+    	material.color.setHSL(loudness, .5,0.5);
+    } else {
+    	material.color.setHSL(0, 0,0.5);
+    }
+
+		var rotation = new THREE.Quaternion();
+		var angles = new THREE.Vector3();
+		if (vrstate) {
+			rotation.set(
+					vrstate.hmd.rotation[0],
+					vrstate.hmd.rotation[1],
+					vrstate.hmd.rotation[2],
+					vrstate.hmd.rotation[3]);
+			angles.setEulerFromQuaternion(rotation, 'XYZ');
+			//angles.z = 0;
+			rotation.setFromEuler(angles, 'XYZ');
+			// velocity.applyQuaternion(rotation);
+		}
+
+		//console.log( rotation )
+
+		//rotationSpeed = rotation.z/5
+
+		camera.rotation.x = rotation.x//time * 0.25;
+		camera.rotation.y = rotation.y//time * 0.5;
+		camera.rotation.z = rotation.z//time * 0.5;	
+
+		camera.position.z = 300 - Math.abs(rotation.x*1500)
+		
+		/*for( var i = 0; i < positions.length; i++ ) {
+
+			    //particles.geometry.vertices[i].x += 3*Math.sin(time*10)+(i%10-5)/10
+			    //particles.geometry.vertices[i].y += 3*Math.cos(time*10)+(i%10-5)/10
+			    particles.geometry.vertices[i].z += 3*Math.sin(time*50+i)//(Math.random()-.1)
+			    particles.geometry.verticesNeedUpdate = true	    
+			}		*/
+
+
+		//console.log( rotation.y )	
+
+		//var which = Math.round(camera.position.y/10)%8+1
+		//var which = Math.round(Date.now()/100)%8+1
+		//console.log(Math.round(20*Math.abs(rotation.y)))
+		var which = Math.round(Math.abs(rotation.y)*20)%8+1
+		//img.src= 
+		applyImage("horse/"+which+"@2x.png")
+		//console.log( img )
+		
+	
+
+		//camera.lookAt( scene.position );
+
+		//h = ( 360 * ( 1.0 + time ) % 360 ) / 360;
+		//material.color.setHSL( h, 0.5, 0.5 );
+		//var t = tinycolor("red");
+
+
+		
+		//particles.materials[ 0 ].color.setHex( 0xff0000 );
+
+		//material.size = 35 + 20*Math.sin( time*10 )
+		vr.pollState(vrstate)
+
+		try{
+			thingy()
+		} catch(error){}
+		
+
+	
+		//renderer.render( scene, camera );
+		effect.render( scene, camera );
+
+		/*renderer.clear();
+
+					// Render scene into texture
+
+		scene.overrideMaterial = null;
+		renderer.render( scene, camera, postprocessing.rtTextureColor, true );
+
+		// Render depth into texture
+
+		scene.overrideMaterial = material_depth;
+		renderer.render( scene, camera, postprocessing.rtTextureDepth, true );
+
+		// Render bokeh composite
+
+		renderer.render( postprocessing.scene, postprocessing.camera );	*/	
+
+	}
+
+	
+
+
+
+		</script>
+
+
+
+</body>
+</html>
