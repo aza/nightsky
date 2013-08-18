@@ -2,7 +2,7 @@
 
 var globals = {
 	vrstate: new vr.State(),
-	OCULUS: true
+	OCULUS: false
 }
 var mouse = {x:0, y:0};
 var mouse2D = {x:0, y:0};
@@ -217,6 +217,8 @@ function init(){
 
 	// Create our 'player'
 	window.playerSightCone = playerCylinder( scene );
+
+	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 }
 
 
@@ -230,6 +232,7 @@ function render(){
 		globals.effect.render( globals.scene, globals.camera )
 		vr.pollState(globals.vrstate)
 	    camera.rotation = getRiftOrientation();
+		setObjToRiftOrientation( globals.camera )
 	} 
 	else {
 		globals.renderer.render( globals.scene, camera )
@@ -238,7 +241,6 @@ function render(){
 	}
 
 	// Update objects
-	setObjToRiftOrientation( globals.camera )
 	if( lookSpot ){
 		lookSpot.rotation.x = Math.PI/2 + camera.rotation.x
 		lookSpot.rotation.z = -camera.rotation.y
