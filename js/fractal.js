@@ -89,7 +89,8 @@ window.nightsky = {}
 		
 		document.body.appendChild( container )
 
-		camera = new THREE.PerspectiveCamera( 180, window.innerWidth / window.innerHeight, 1, 3 * C.SCALE_FACTOR );
+		camera = new THREE.PerspectiveCamera( 180, window.innerWidth / window.innerHeight, 0, 3 * C.SCALE_FACTOR );
+		//TREE.THREE.PerspectiveCamera( fov, aspect, near, far );
 		camera.position.z = C.SCALE_FACTOR/2;
 
 		scene = new THREE.Scene();
@@ -97,7 +98,7 @@ window.nightsky = {}
 
 		generateOrbit();
 		
-		for (var s = 0; s < C.NUM_SUBSETS; s++){hueValues[s] = Math.random();}
+		eachSubset(function(subset, s){ hueValues[s] = Math.random() })
 		
 		// Create particle systems
 		for (var k = 0; k < C.NUM_LEVELS; k++){
@@ -312,10 +313,11 @@ window.nightsky = {}
 
 	function onKeyDown(event){
 		if(event.keyCode == 38 && nightsky.layerSpeed < 20) nightsky.layerSpeed += .5;
-		else if(event.keyCode == 40 && nightsky.layerSpeed > 0) nightsky.layerSpeed -= .5;
+		else if(event.keyCode == 40 && nightsky.layerSpeed > -5) nightsky.layerSpeed -= .5;
 		else if(event.keyCode == 37) nightsky.layerRotationDelta += .001;
 		else if(event.keyCode == 39) nightsky.layerRotationDelta -= .001;
 		else if(event.keyCode == 32 ) { nightsky.layerSpeed = 0 };
+		console.log( event.keyCode )
 	}
 
 })(window.nightsky)
