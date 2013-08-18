@@ -62,6 +62,16 @@ window.nightsky = {}
 				
 	nightsky.initDataPoints()
 
+	function particleMaterial(){
+		return new THREE.ParticleBasicMaterial({
+			size: (1),
+			blending: THREE.AdditiveBlending,
+			depthTest: true,
+			transparent : true,
+			map: THREE.ImageUtils.loadTexture( 'img/galaxy.png' )
+		});
+	}
+
 	var effect;
 	var camera, scene, renderer, hueValues = [];
 
@@ -91,20 +101,17 @@ window.nightsky = {}
 		
 		// Create particle systems
 		for (var k = 0; k < C.NUM_LEVELS; k++){
-			for (var s = 0; s < C.NUM_SUBSETS; s++){
-				var geometry = new THREE.Geometry();
-				for (var i = 0; i < C.NUM_POINTS_SUBSET; i++){geometry.vertices.push( nightsky.orbit.subsets[s][i].vertex);}
-				var materials = new THREE.ParticleBasicMaterial({
-					size: (1 ),
-					blending: THREE.AdditiveBlending,
-					depthTest: true,
-					transparent : true,
-					map: THREE.ImageUtils.loadTexture( 'img/galaxy.png' )
-				});
+			eachSubset(function(subset, s){
+				var geometry = new THREE.Geometry(),
+						material = particleMaterial()
 				
-				materials.color.setHSL(hueValues[s], C.DEF_SATURATION, C.DEF_BRIGHTNESS);
-				particles = new THREE.ParticleSystem( geometry, materials );
-				particles.myMaterial = materials;
+				geometry.vertices = subset.map(function(point){
+					return point.vertex
+				})
+			
+				material.color.setHSL(hueValues[s], C.DEF_SATURATION, C.DEF_BRIGHTNESS);
+				particles = new THREE.ParticleSystem( geometry, material );
+				particles.myMaterial = material;
 				particles.myLevel = k;
 				particles.mySubset = s;
 				particles.position.x = 0;
@@ -112,7 +119,7 @@ window.nightsky = {}
 				particles.position.z = - C.LEVEL_DEPTH * k - (s  * C.LEVEL_DEPTH / C.NUM_SUBSETS);
 				particles.needsUpdate = 0;
 				scene.add( particles );
-			}
+			})
 		}
 
 		// Setup renderer and effects
@@ -132,12 +139,10 @@ window.nightsky = {}
 	}
 
 	function onWindowResize() {
-
 		camera.aspect = window.innerWidth / window.innerHeight;
 		camera.updateProjectionMatrix();
 
 		renderer.setSize( window.innerWidth, window.innerHeight );
-
 	}
 
 
@@ -182,20 +187,13 @@ window.nightsky = {}
 					child.needsUpdate = 0;
 					child.rotation.z += 20
 					
-					var geometry = new THREE.Geometry();
+					var geometry = new THREE.Geometry(),
+							material = particleMaterial()
 					for (var j = 0; j < C.NUM_POINTS_SUBSET; j++){geometry.vertices.push( nightsky.orbit.subsets[1][j].vertex);}
-
-					var materials = new THREE.ParticleBasicMaterial({
-						size: (1),
-						blending: THREE.AdditiveBlending,
-						depthTest: true,
-						transparent : true,
-						map: THREE.ImageUtils.loadTexture( 'img/galaxy.png' )
-					});
 				
-					materials.color.setHSL(hueValues[i], C.DEF_SATURATION, C.DEF_BRIGHTNESS);
-					var particles = new THREE.ParticleSystem( geometry, materials );
-					particles.myMaterial = materials;
+					material.color.setHSL(hueValues[i], C.DEF_SATURATION, C.DEF_BRIGHTNESS);
+					var particles = new THREE.ParticleSystem( geometry, material );
+					particles.myMaterial = material;
 					particles.myLevel = child.myLevel;
 					particles.mySubset = child.mySubset;
 					particles.position.x = 0;
@@ -235,10 +233,9 @@ window.nightsky = {}
 			hueValues[index] = Math.random();
 		})
 		
-		for( i = 0; i < scene.children.length; i++ ) {
+		scene.children.forEach(function(child){
 			child.needsUpdate = 1;
-		}
-
+		})
 	}
 
 	function generateOrbit(){
@@ -320,6 +317,5 @@ window.nightsky = {}
 		else if(event.keyCode == 39) nightsky.layerRotationDelta -= .001;
 		else if(event.keyCode == 32 ) { nightsky.layerSpeed = 0 };
 	}
-
 
 })(window.nightsky)
