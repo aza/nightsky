@@ -32,6 +32,7 @@ var usersRef = new Firebase('https://rift.firebaseio.com/users')
 usersRef.on('value', function(snap){
 	var val = snap.val()
 	var users = Object.keys(val)
+
 	for( var i=0; i<users.length; i++){
 		var user = users[i]
 		//if( user == userName ) continue
@@ -52,6 +53,20 @@ usersRef.on('value', function(snap){
 		}
 		
 		//console.log( val[users[i]] )
+	}
+
+	//HACKY DISTANCE TEST
+	if( users.length == 2 ){
+		var dX = Math.pow(USERS[users[0]].rotation.x - USERS[users[1]].rotation.x, 2)
+		var dY = Math.pow(USERS[users[0]].rotation.z - USERS[users[1]].rotation.z, 2)
+		var d = Math.pow( dX+dY, .5 )
+		if( d < .1 ){
+			if( d < .1 ) d = .1
+				//console.log( d )
+			globals.clouds[0].particles.position.z += 1/d
+			globals.clouds[1].particles.position.z += 1/d
+		}
+		
 	}
 })
 
@@ -131,6 +146,7 @@ function init(){
 
 	var cloud2 = new CreatePointCloud( "ball.png" )
 	cloud2.addTo( scene )
+	globals.clouds = [cloud, cloud2]
 
 	var renderer = new THREE.WebGLRenderer( ({ clearAlpha: 1 }) )
 	renderer.setSize( window.innerWidth, window.innerHeight )
