@@ -90,7 +90,6 @@ window.nightsky = {}
 		document.body.appendChild( container )
 
 		camera = new THREE.PerspectiveCamera( 180, window.innerWidth / window.innerHeight, 0, 3 * C.SCALE_FACTOR );
-		//TREE.THREE.PerspectiveCamera( fov, aspect, near, far );
 		camera.position.z = C.SCALE_FACTOR/2;
 
 		scene = new THREE.Scene();
@@ -302,17 +301,22 @@ window.nightsky = {}
 
 	function shuffleParams() {
 		var C = nightsky.constants
+		var modulate = function(){
+			//return Math.sin( Date.now()*.000005 )
+			return Math.random()
+		}
+
 		nightsky.orbitParams = {
-			a: C.A_MIN + Math.random() * (C.A_MAX - C.A_MIN),
-			b: C.B_MIN + Math.random() * (C.B_MAX - C.B_MIN),
-			c: C.C_MIN + Math.random() * (C.C_MAX - C.C_MIN),
-			d: C.D_MIN + Math.random() * (C.D_MAX - C.D_MIN),
-			e: C.E_MIN + Math.random() * (C.E_MAX - C.E_MIN)
+			a: C.A_MIN + modulate() * (C.A_MAX - C.A_MIN),
+			b: C.B_MIN + modulate() * (C.B_MAX - C.B_MIN),
+			c: C.C_MIN + modulate() * (C.C_MAX - C.C_MIN),
+			d: C.D_MIN + modulate() * (C.D_MAX - C.D_MIN),
+			e: C.E_MIN + modulate() * (C.E_MAX - C.E_MIN)
 		}
 	}
 
 	function onKeyDown(event){
-		if(event.keyCode == 38 && nightsky.layerSpeed < 20) nightsky.layerSpeed += .5;
+		if(event.keyCode == 38 && nightsky.layerSpeed < 40) nightsky.layerSpeed += .5;
 		else if(event.keyCode == 40 && nightsky.layerSpeed > -5) nightsky.layerSpeed -= .5;
 		else if(event.keyCode == 37) nightsky.layerRotationDelta += .001;
 		else if(event.keyCode == 39) nightsky.layerRotationDelta -= .001;
