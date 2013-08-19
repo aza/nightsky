@@ -187,16 +187,32 @@ if( !window.nightsky ) window.nightsky = {}
 	nightsky.initWorld = function() {
 		nightsky.initDataPoints()
 		nightsky.createLayers()
-		setInterval(updateOrbit, 7000)
+		setInterval(nightsky.updateOrbit, 7000)
+
+		nightsky.team = new nightsky.Team()
+		nightsky.bindToFirebase( nightsky.team )
+
 	}
 
 	// Update coolness
 	nightsky.updateWorld = function() {
 		nightsky.updateLayers()
 
-		nightsky.camera.position.z = 0
-		nightsky.camera.position.y += nightsky.camera.rotation.x * nightsky.layerSpeed 
-		nightsky.camera.position.x -= nightsky.camera.rotation.y * nightsky.layerSpeed
+		var you = nightsky.team.you
+		if (you) {
+			you.position.x -= nightsky.camera.rotation.y * nightsky.layerSpeed * 5
+			you.position.y += nightsky.camera.rotation.x * nightsky.layerSpeed * 5			
+			you.rotation.x = nightsky.camera.rotation.x * 1
+			you.rotation.y = nightsky.camera.rotation.y * 1
+
+			var cameraMovementExxageration = -50
+			nightsky.camera.position.set(
+				you.position.x - nightsky.camera.rotation.y * cameraMovementExxageration,
+				you.position.y + nightsky.camera.rotation.x * cameraMovementExxageration,
+				0
+			)
+		}
+
 }
 
 	///////////////////////////////////////////////
@@ -220,7 +236,7 @@ if( !window.nightsky ) window.nightsky = {}
 			nightsky.orbit.subsets.push(subsetPoints);
 		}
 	}
-				
+
 	function particleMaterial(){
 		return new THREE.ParticleBasicMaterial({
 			size: (1),
