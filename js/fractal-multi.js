@@ -190,7 +190,17 @@ if( !window.nightsky ) window.nightsky = {}
 		setInterval(nightsky.updateOrbit, 7000)
 
 		nightsky.team = new nightsky.Team()
-		nightsky.bindToFirebase( nightsky.team )
+		nightsky.bindToFirebase( nightsky.team, {
+			updatePlayerWithRemotePosition: function( playerName, playerRemoteInfo ) {
+				var player = nightsky.team.getByName( playerName )
+				player.position.x = playerRemoteInfo.x
+				player.position.y = playerRemoteInfo.y
+				
+				player.rotation.x = playerRemoteInfo.rX
+				player.rotation.y = playerRemoteInfo.rY
+				player.rotation.z = playerRemoteInfo.rZ
+			}
+		})
 
 	}
 
@@ -199,19 +209,38 @@ if( !window.nightsky ) window.nightsky = {}
 		nightsky.updateLayers()
 
 		var you = nightsky.team.you
-		if (you) {
-			you.position.x -= nightsky.camera.rotation.y * nightsky.layerSpeed * 5
-			you.position.y += nightsky.camera.rotation.x * nightsky.layerSpeed * 5			
-			you.rotation.x = nightsky.camera.rotation.x * 1
-			you.rotation.y = nightsky.camera.rotation.y * 1
 
-			var cameraMovementExxageration = -50
+		if (you) {
+			// Move your tracking sphere's position (you)
+			you.position.x -= nightsky.camera.rotation.y * nightsky.layerSpeed * 5
+			you.position.y += nightsky.camera.rotation.x * nightsky.layerSpeed * 5
+			you.rotation.set(
+				nightsky.camera.rotation.x,
+				nightsky.camera.rotation.y,
+				nightsky.camera.rotation.z
+			)
+
+			// Adjust camera to follow you
+			var exaggerate = 4
 			nightsky.camera.position.set(
-				you.position.x - nightsky.camera.rotation.y * cameraMovementExxageration,
-				you.position.y + nightsky.camera.rotation.x * cameraMovementExxageration,
+				you.position.x + nightsky.camera.rotation.y * exaggerate,
+				you.position.y - nightsky.camera.rotation.x * exaggerate,
 				0
 			)
+
+			// Pass player position to Firebase
+			if( window.updateNetworkStash ){
+				window.updateNetworkStash({
+					x: you.position.x,
+					y: you.position.y,
+					rX: you.rotation.x,
+					rY: you.rotation.y,
+					rZ: you.rotation.z
+				})
+			}
+
 		}
+
 
 }
 
