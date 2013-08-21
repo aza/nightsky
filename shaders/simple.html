@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<!--
+/*
+ * Copyright (C) 2009 Apple Inc. All Rights Reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Spinning WebGL Box</title>
+
+<script src="js/effect.js"> </script>
+<script>
+function createGlContext( cv )
+{
+    var gGLContext = null;
+    var names = [ "webgl", "experimental-webgl", "webkit-3d", "moz-webgl" ];
+    for( var i = 0; i<names.length; i++)
+    {
+        try
+        {
+            gGLContext = cv.getContext( names[i], {alpha: false, depth: false, antialias: false, stencil: true, premultipliedAlpha: false } );
+        }
+        catch( e )
+        {
+           gGLContext = null;
+        }
+        if( gGLContext )
+             break;
+    }
+
+    return gGLContext;
+}
+</script>
+<script id="vshader" type="x-shader/x-vertex">
+    uniform mat4 u_modelViewProjMatrix;
+    uniform mat4 u_normalMatrix;
+    uniform vec3 lightDir;
+
+    attribute vec3 vNormal;
+    attribute vec4 vColor;
+    attribute vec4 vPosition;
+
+    varying float v_Dot;
+    varying vec4 v_Color;
+
+    void main()
+    {
+        gl_Position = u_modelViewProjMatrix * vPosition;
+        v_Color = vColor;
+        vec4 transNormal = u_normalMatrix * vec4(vNormal, 1);
+        v_Dot = max(dot(transNormal.xyz, lightDir), 0.0);
+    }
+</script>
+
+<script id="fshader" type="x-shader/x-fragment">
+void main(void)
+{
+  vec2 uv = gl_FragCoord.xy / iResolution.xy;
+  gl_FragColor = vec4(uv,0.5+0.5*sin(iGlobalTime),1.0);
+}
+</script>
+<script>
+
+        
+        
+
+    function start()
+    {
+        console.log('hi')
+        canvas = document.getElementById('canvas')
+        glContext = createGlContext( document.getElementById('canvas') );
+        mEffect = new Effect( null, glContext, canvas.width, canvas.height, null, this, false, false );
+        mEffect.NewShader( document.getElementById('fshader').text)
+
+      function render(){ 
+        mEffect.Paint((new Date()).getTime()/1000.0 % 5000, 6,6,0,0)
+        //glContext.flush();
+        requestAnimationFrame( render )
+      }
+
+        render()
+    }
+
+
+</script>
+<style type="text/css">
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width:100%;
+        height: 100%;
+    }
+    .text {
+        position:absolute;
+        top:100px;
+        left:20px;
+        font-size:2em;
+        color: blue;
+    }
+</style>
+</head>
+
+<body onload="start()">
+<canvas id="canvas">
+    If you're seeing this your web browser doesn't support the &lt;canvas>&gt; element. Ouch!
+</canvas>
+<div class="text">This is some text over the canvas</div>
+</body>
+
+</html>
